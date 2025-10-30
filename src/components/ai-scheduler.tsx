@@ -37,13 +37,13 @@ import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   plantType: z.string().min(2, {
-    message: "Plant type must be at least 2 characters.",
+    message: "El tipo de planta debe tener al menos 2 caracteres.",
   }),
   timeOfDay: z.string({
-    required_error: "Please select a time of day.",
+    required_error: "Por favor, seleccione una hora del día.",
   }),
   weatherForecast: z.string().min(10, {
-    message: "Weather forecast must be at least 10 characters.",
+    message: "El pronóstico del tiempo debe tener al menos 10 caracteres.",
   }),
 });
 
@@ -93,11 +93,11 @@ export function AIScheduler({ currentMoisture }: AISchedulerProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="text-primary" />
-          AI-Powered Watering Schedule
+          Horario de Riego con IA
         </CardTitle>
         <CardDescription>
-          Let AI create a personalized watering schedule for your plant based on
-          current conditions.
+          Deja que la IA cree un horario de riego personalizado para tu planta
+          basado en las condiciones actuales.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -108,9 +108,9 @@ export function AIScheduler({ currentMoisture }: AISchedulerProps) {
               name="plantType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Plant Type</FormLabel>
+                  <FormLabel>Tipo de Planta</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Tomato, Rose, Lettuce" {...field} />
+                    <Input placeholder="ej., Tomate, Rosa, Lechuga" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,20 +121,20 @@ export function AIScheduler({ currentMoisture }: AISchedulerProps) {
               name="timeOfDay"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Time of Day</FormLabel>
+                  <FormLabel>Hora del Día</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a time" />
+                        <SelectValue placeholder="Selecciona una hora" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="morning">Morning</SelectItem>
-                      <SelectItem value="afternoon">Afternoon</SelectItem>
-                      <SelectItem value="evening">Evening</SelectItem>
+                      <SelectItem value="morning">Mañana</SelectItem>
+                      <SelectItem value="afternoon">Tarde</SelectItem>
+                      <SelectItem value="evening">Noche</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -146,10 +146,10 @@ export function AIScheduler({ currentMoisture }: AISchedulerProps) {
               name="weatherForecast"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Weather Forecast</FormLabel>
+                  <FormLabel>Pronóstico del Tiempo</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g., Sunny and hot for the next 3 days."
+                      placeholder="ej., Soleado y caluroso durante los próximos 3 días."
                       className="resize-none"
                       {...field}
                     />
@@ -162,13 +162,13 @@ export function AIScheduler({ currentMoisture }: AISchedulerProps) {
           <CardFooter className="flex flex-col items-start gap-4 mt-auto">
             <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Schedule
+              Generar Horario
             </Button>
             {schedule && (
               <div className="p-4 bg-secondary rounded-lg w-full flex items-start gap-4">
                   <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold text-primary-foreground/90">Personalized Schedule:</p>
+                    <p className="font-semibold text-primary-foreground/90">Horario Personalizado:</p>
                     <p className="text-sm text-secondary-foreground">{schedule}</p>
                   </div>
               </div>

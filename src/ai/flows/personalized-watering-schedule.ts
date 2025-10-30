@@ -16,17 +16,17 @@ import {z} from 'genkit';
 
 // Define the input schema
 const PersonalizedWateringScheduleInputSchema = z.object({
-  soilMoisture: z.number().describe('The current soil moisture level (percentage).'),
-  timeOfDay: z.string().describe('The current time of day (e.g., morning, afternoon, evening).'),
-  weatherForecast: z.string().describe('A brief weather forecast for the next few days.'),
-  plantType: z.string().describe('The type of plant (e.g., tomato, rose, lettuce).'),
-  location: z.string().describe('The location of the plant.').optional(),
+  soilMoisture: z.number().describe('El nivel actual de humedad del suelo (porcentaje).'),
+  timeOfDay: z.string().describe('La hora actual del día (ej., mañana, tarde, noche).'),
+  weatherForecast: z.string().describe('Un breve pronóstico del tiempo para los próximos días.'),
+  plantType: z.string().describe('El tipo de planta (ej., tomate, rosa, lechuga).'),
+  location: z.string().describe('La ubicación de la planta.').optional(),
 });
 export type PersonalizedWateringScheduleInput = z.infer<typeof PersonalizedWateringScheduleInputSchema>;
 
 // Define the output schema
 const PersonalizedWateringScheduleOutputSchema = z.object({
-  wateringSchedule: z.string().describe('A personalized watering schedule (e.g., Water every other day in the morning).'),
+  wateringSchedule: z.string().describe('Un horario de riego personalizado (ej., Regar cada dos días por la mañana).'),
 });
 export type PersonalizedWateringScheduleOutput = z.infer<typeof PersonalizedWateringScheduleOutputSchema>;
 
@@ -34,7 +34,7 @@ export type PersonalizedWateringScheduleOutput = z.infer<typeof PersonalizedWate
 const generateWateringScheduleTool = ai.defineTool(
   {
     name: 'generateWateringSchedule',
-    description: 'Generates a personalized watering schedule based on sensor readings, soil moisture, time of day, weather forecasts and plant type.',
+    description: 'Genera un horario de riego personalizado basado en lecturas de sensores, humedad del suelo, hora del día, pronósticos del tiempo y tipo de planta.',
     inputSchema: PersonalizedWateringScheduleInputSchema,
     outputSchema: PersonalizedWateringScheduleOutputSchema,
   },
@@ -50,14 +50,14 @@ const wateringSchedulePrompt = ai.definePrompt({
   name: 'wateringSchedulePrompt',
   input: {schema: PersonalizedWateringScheduleInputSchema},
   output: {schema: PersonalizedWateringScheduleOutputSchema},
-  prompt: `You are an expert gardening assistant.  Based on the following information, create a personalized watering schedule for the plant:
+  prompt: `Eres un asistente de jardinería experto. Responde siempre en español. Basado en la siguiente información, crea un horario de riego personalizado para la planta:
 
-Soil Moisture: {{soilMoisture}}%
-Time of Day: {{timeOfDay}}
-Weather Forecast: {{weatherForecast}}
-Plant Type: {{plantType}}
+Humedad del Suelo: {{soilMoisture}}%
+Hora del Día: {{timeOfDay}}
+Pronóstico del Tiempo: {{weatherForecast}}
+Tipo de Planta: {{plantType}}
 
-Watering Schedule: `,
+Horario de Riego: `,
 });
 
 // Define the flow

@@ -14,16 +14,16 @@ type MoistureStatusProps = {
 
 export function MoistureStatus({ moistureLevel }: MoistureStatusProps) {
   const level = Math.round(moistureLevel);
-  let statusText = "Sufficient Moisture";
+  let statusText = "Humedad Suficiente";
   let statusColor = "text-green-500";
   let progressColor = "bg-green-500";
 
   if (level < 40) {
-    statusText = "Needs Watering";
+    statusText = "Necesita Riego";
     statusColor = "text-yellow-500";
     progressColor = "bg-yellow-500";
   } else if (level > 85) {
-    statusText = "Soil Saturated";
+    statusText = "Suelo Saturado";
     statusColor = "text-blue-500";
     progressColor = "bg-blue-500";
   }
@@ -31,8 +31,8 @@ export function MoistureStatus({ moistureLevel }: MoistureStatusProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Soil Moisture</CardTitle>
-        <CardDescription>Live sensor reading from your garden.</CardDescription>
+        <CardTitle>Humedad del Suelo</CardTitle>
+        <CardDescription>Lectura del sensor en tiempo real de tu jardín.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-baseline gap-2">

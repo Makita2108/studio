@@ -17,8 +17,8 @@ export function ManualIrrigation({ isWatering, onWater }: ManualIrrigationProps)
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Manual Control</CardTitle>
-        <CardDescription>Activate the pump on-demand.</CardDescription>
+        <CardTitle>Control Manual</CardTitle>
+        <CardDescription>Activa la bomba a demanda.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <Button
@@ -28,10 +28,10 @@ export function ManualIrrigation({ isWatering, onWater }: ManualIrrigationProps)
           disabled={isWatering}
         >
           <Zap className="mr-2 h-4 w-4" />
-          {isWatering ? "Watering in progress..." : "Activate Riego (5s)"}
+          {isWatering ? "Regando..." : "Activar Riego (5s)"}
         </Button>
         <p className="text-xs text-muted-foreground h-4">
-          {isWatering && "The pump will run for 5 seconds."}
+          {isWatering && "La bomba funcionará durante 5 segundos."}
         </p>
       </CardContent>
     </Card>

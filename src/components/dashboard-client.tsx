@@ -30,8 +30,8 @@ export function DashboardClient() {
     if (isWatering) return;
     setIsWatering(true);
     toast({
-        title: "Irrigation System",
-        description: "Manual watering activated for 5 seconds.",
+        title: "Sistema de Riego",
+        description: "Riego manual activado durante 5 segundos.",
     });
 
     // Simulate watering effect
@@ -44,8 +44,8 @@ export function DashboardClient() {
       setIsWatering(false);
       clearInterval(wateringEffect);
       toast({
-        title: "Irrigation System",
-        description: "Manual watering finished.",
+        title: "Sistema de Riego",
+        description: "Riego manual finalizado.",
       });
     }, 5000);
   };
