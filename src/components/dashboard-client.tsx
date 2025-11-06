@@ -6,6 +6,7 @@ import { ManualIrrigation } from "@/components/manual-irrigation";
 import { MoistureStatus } from "@/components/moisture-status";
 import { useToast } from "@/hooks/use-toast";
 import { WateringHistory } from "@/components/watering-history";
+import { Button } from "@/components/ui/button";
 
 export function DashboardClient() {
   const [moistureLevel, setMoistureLevel] = useState(50);
@@ -54,6 +55,15 @@ export function DashboardClient() {
     }, 5000);
   };
 
+  const handleDryOut = () => {
+    setMoistureLevel(prev => Math.max(0, prev - 10));
+    toast({
+        title: "Simulación",
+        description: "Humedad reducida en 10%.",
+        variant: "destructive"
+    });
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6">
@@ -68,6 +78,7 @@ export function DashboardClient() {
               isWatering={isWatering}
               onWater={handleManualWatering}
             />
+            <Button onClick={handleDryOut} variant="outline">Quitar Humedad</Button>
             <WateringHistory history={history} />
         </div>
       </div>
