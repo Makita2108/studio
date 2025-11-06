@@ -27,7 +27,6 @@ const tearFrames: AnimationFrame[] = [
   { transform: 'translateY(5px)', opacity: 0 },
 ];
 
-// Poses for the angry shaking animation
 const shakePoses: AnimationPose[] = [
   { transform: 'translateX(-1px) rotate(-1deg)' },
   { transform: 'translateX(1px) rotate(1deg)' },
@@ -41,6 +40,7 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
   const [dancePoseIndex, setDancePoseIndex] = useState(0);
   const [tearFrameIndex, setTearFrameIndex] = useState(0);
   const [shakePoseIndex, setShakePoseIndex] = useState(0);
+  const [sunRotation, setSunRotation] = useState(0);
 
   const getPlantState = () => {
     if (moistureLevel < 40) return 'droopy';
@@ -50,7 +50,8 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
 
   const plantState = getPlantState();
 
-  // Effect for the dancing animation
+  // --- Animation Effects ---
+
   useEffect(() => {
     let danceInterval: NodeJS.Timeout | undefined;
     if (plantState === 'healthy') {
@@ -61,7 +62,6 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
     return () => { if (danceInterval) clearInterval(danceInterval); };
   }, [plantState]);
 
-  // Effect for the crying animation
   useEffect(() => {
     let tearInterval: NodeJS.Timeout | undefined;
     if (plantState === 'droopy') {
@@ -72,17 +72,22 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
     return () => { if (tearInterval) clearInterval(tearInterval); };
   }, [plantState]);
 
-  // Effect for the shaking animation
   useEffect(() => {
     let shakeInterval: NodeJS.Timeout | undefined;
     if (plantState === 'overwatered') {
       shakeInterval = setInterval(() => {
         setShakePoseIndex(prevIndex => (prevIndex + 1) % shakePoses.length);
-      }, 120); // Fast interval for a shaking effect
+      }, 120);
     }
     return () => { if (shakeInterval) clearInterval(shakeInterval); };
   }, [plantState]);
 
+  useEffect(() => {
+    const sunInterval = setInterval(() => {
+      setSunRotation(prevRotation => (prevRotation + 1) % 360);
+    }, 70); // Control rotation speed
+    return () => clearInterval(sunInterval);
+  }, []); // Runs continuously
 
   // --- Style Preparation ---
   const basePlantStyle: React.CSSProperties = {
@@ -109,7 +114,6 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
     ...tearFrames[tearFrameIndex],
   };
 
-
   // --- Sub-Components ---
   const Face = () => {
     if (plantState === 'droopy') {
@@ -128,13 +132,10 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
     if (plantState === 'overwatered') {
       return (
         <>
-          {/* Angry Face */}
           <circle cx="46" cy="30" r="1.5" fill="black" />
           <circle cx="54" cy="30" r="1.5" fill="black" />
-           {/* Angry Eyebrows */}
           <path d="M44 27 l4 1" stroke="black" strokeWidth="1.5" fill="none" />
           <path d="M56 27 l-4 1" stroke="black" strokeWidth="1.5" fill="none" />
-          {/* Angry Frown */}
           <path d="M48 37 q2 -2 4 0" stroke="black" strokeWidth="1.5" fill="none" />
         </>
       );
@@ -148,7 +149,24 @@ export const PlantAnimation: React.FC<PlantAnimationProps> = ({ moistureLevel })
     );
   };
 
-  const Sun = () => (<g style={{ opacity: plantState !== 'droopy' ? 1 : 0, transition: 'opacity 0.5s' }}><circle cx="25" cy="15" r="8" fill="yellow" /><line x1="25" y1="5" x2="25" y2="25" stroke="yellow" strokeWidth="2" /><line x1="15" y1="15" x2="35" y2="15" stroke="yellow" strokeWidth="2" /><line x1="18" y1="8" x2="32" y2="22" stroke="yellow" strokeWidth="2" /><line x1="18" y1="22" x2="32" y2="8" stroke="yellow" strokeWidth="2" /></g>);
+  const Sun = () => {
+    const style: React.CSSProperties = {
+      opacity: plantState !== 'droopy' ? 1 : 0,
+      transition: 'opacity 0.5s',
+      transform: `rotate(${sunRotation}deg)`,
+      transformOrigin: '25px 15px',
+    };
+    return (
+      <g style={style}>
+        <circle cx="25" cy="15" r="8" fill="yellow" />
+        <line x1="25" y1="5" x2="25" y2="25" stroke="yellow" strokeWidth="2" />
+        <line x1="15" y1="15" x2="35" y2="15" stroke="yellow" strokeWidth="2" />
+        <line x1="18" y1="8" x2="32" y2="22" stroke="yellow" strokeWidth="2" />
+        <line x1="18" y1="22" x2="32" y2="8" stroke="yellow" strokeWidth="2" />
+      </g>
+    );
+  };
+
   const SadCloud = () => (<g style={{ opacity: plantState === 'droopy' ? 1 : 0, transition: 'opacity 0.5s' }}><path d="M70 25 q-5 0 -5 -5 a5 5 0 0 1 5 -5 q0 -5 5 -5 a5 5 0 0 1 5 5 q5 0 5 5 a5 5 0 0 1 -5 5z" fill="#A0A0A0"/><line x1="72" y1="30" x2="70" y2="35" stroke="#4682B4" strokeWidth="2"/><line x1="78" y1="30" x2="76" y2="35" stroke="#4682B4" strokeWidth="2"/><path d="M72 20 q3 -4 6 0" stroke="black" strokeWidth="1" fill="none" /></g>);
 
   return (
