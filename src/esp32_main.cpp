@@ -23,9 +23,11 @@ FirebaseConfig config;
 // Variables to store sensor data
 float temperature = 0.0;
 float humidity = 0.0;
+float soilMoisture = 0.0;
 
-// Variable to store fan state
+// Variable to store actuator states
 bool fanOn = false;
+bool valveOn = false;
 
 // Flag to indicate if we are connected to Firebase
 bool firebaseConnected = false;
@@ -34,6 +36,7 @@ bool firebaseConnected = false;
 struct SensorData {
   float temperature;
   float humidity;
+  float soilMoisture;
 };
 
 #define OFFLINE_QUEUE_SIZE 10
@@ -93,6 +96,7 @@ void loop() {
   // Simulate sensor readings
   temperature = random(20, 30);
   humidity = random(40, 60);
+  soilMoisture = random(30, 70);
 
   if (WiFi.status() == WL_CONNECTED && firebaseConnected) {
     if (offline_queue_head != offline_queue_tail) {
@@ -101,7 +105,7 @@ void loop() {
     sendDataToFirebase();
   } else {
     // Store data offline if not connected
-    offline_queue[offline_queue_head] = {temperature, humidity};
+    offline_queue[offline_queue_head] = {temperature, humidity, soilMoisture};
     offline_queue_head = (offline_queue_head + 1) % OFFLINE_QUEUE_SIZE;
     if (offline_queue_head == offline_queue_tail) {
         offline_queue_tail = (offline_queue_tail + 1) % OFFLINE_QUEUE_SIZE;
@@ -123,6 +127,11 @@ void sendDataToFirebase() {
   } else {
     Serial.println("Error sending humidity");
   }
+  if (Firebase.RTDB.setFloat(&fbdo, "/data/soilMoisture", soilMoisture)) {
+    Serial.println("Soil Moisture sent successfully");
+  } else {
+    Serial.println("Error sending soil moisture");
+  }
 }
 
 void sendOfflineData() {
@@ -130,7 +139,9 @@ void sendOfflineData() {
     SensorData data = offline_queue[offline_queue_tail];
     offline_queue_tail = (offline_queue_tail + 1) % OFFLINE_QUEUE_SIZE;
 
-    if (Firebase.RTDB.setFloat(&fbdo, "/data/temperature", data.temperature) && Firebase.RTDB.setFloat(&fbdo, "/data/humidity", data.humidity)) {
+    if (Firebase.RTDB.setFloat(&fbdo, "/data/temperature", data.temperature) && 
+        Firebase.RTDB.setFloat(&fbdo, "/data/humidity", data.humidity) && 
+        Firebase.RTDB.setFloat(&fbdo, "/data/soilMoisture", data.soilMoisture)) {
       Serial.println("Offline data sent successfully");
     } else {
       // If sending fails, put it back in the queue
@@ -143,13 +154,24 @@ void sendOfflineData() {
 void streamCallback(FirebaseStream data) {
   Serial.printf("stream path, %s/%s\n", data.streamPath().c_str(), data.dataPath().c_str());
   if (data.dataType() == "boolean") {
-    fanOn = data.boolData();
-    if(fanOn){
-        Serial.println("Fan turned ON");
-        // Add code here to turn on the fan
-    } else {
-        Serial.println("Fan turned OFF");
-        // Add code here to turn off the fan
+    if (String(data.dataPath().c_str()).equals("/fan")) {
+        fanOn = data.boolData();
+        if(fanOn){
+            Serial.println("Fan turned ON");
+            // Add code here to turn on the fan
+        } else {
+            Serial.println("Fan turned OFF");
+            // Add code here to turn off the fan
+        }
+    } else if (String(data.dataPath().c_str()).equals("/valve")) {
+        valveOn = data.boolData();
+        if(valveOn){
+            Serial.println("Valve turned ON");
+            // Add code here to turn on the valve
+        } else {
+            Serial.println("Valve turned OFF");
+            // Add code here to turn off the valve
+        }
     }
   }
 }

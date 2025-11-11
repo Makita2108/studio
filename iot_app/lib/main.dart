@@ -4,6 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,15 +70,18 @@ class _MyHomePageState extends State<MyHomePage> {
   DatabaseReference _databaseReference;
   double _temperature = 0;
   double _humidity = 0;
+  double _soilMoisture = 0;
   bool _fanOn = false;
+  bool _valveOn = false;
   List<FlSpot> _temperatureData = [];
   List<FlSpot> _humidityData = [];
-  Timer _timer;
+  List<FlSpot> _soilMoistureData = [];
+  String _wateringTime = "Not available";
+  List<dynamic> _forecast = [];
 
   @override
   void initState() {
     super.initState();
-    //_databaseReference = FirebaseDatabase.instance.ref();
     _databaseReference = FirebaseDatabase.instance.refFromURL('YOUR_DATABASE_URL');
 
     _databaseReference.child('data/temperature').onValue.listen((event) {
@@ -94,17 +100,70 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     });
 
+    _databaseReference.child('data/soilMoisture').onValue.listen((event) {
+      final data = event.snapshot.value as double;
+      setState(() {
+        _soilMoisture = data;
+        _soilMoistureData.add(FlSpot(DateTime.now().millisecondsSinceEpoch.toDouble(), data));
+      });
+    });
+
     _databaseReference.child('commands/fan').onValue.listen((event) {
       final data = event.snapshot.value as bool;
       setState(() {
         _fanOn = data;
       });
     });
+
+    _databaseReference.child('commands/valve').onValue.listen((event) {
+      final data = event.snapshot.value as bool;
+      setState(() {
+        _valveOn = data;
+      });
+    });
+
+    _getWateringTime();
+    _getWeatherForecast();
   }
 
   void _toggleFan(bool value) {
     _databaseReference.child('commands/fan').set(value);
   }
+
+  void _toggleValve(bool value) {
+    _databaseReference.child('commands/valve').set(value);
+  }
+
+  void _getWateringTime() async {
+    //This is a mock API call, replace with your actual API endpoint
+    final response = await http.get(Uri.parse('https://api.mocki.io/v1/b0434569'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _wateringTime = data['time'];
+      });
+    } else {
+      setState(() {
+        _wateringTime = "Error fetching time";
+      });
+    }
+  }
+
+    void _getWeatherForecast() async {
+    //This is a mock API call, replace with your actual API endpoint
+    final response = await http.get(Uri.parse('https://api.mocki.io/v1/b0434569'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _forecast = data['forecast'];
+      });
+    } else {
+      // Handle error
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,11 +205,76 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
+                    Text('Soil Moisture', style: Theme.of(context).textTheme.headline6),
+                    Text('$_soilMoisture %', style: Theme.of(context).textTheme.headline4),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
                     Text('Fan Control', style: Theme.of(context).textTheme.headline6),
                     SwitchListTile(
                       title: Text('Fan'),
                       value: _fanOn,
                       onChanged: _toggleFan,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+             SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    Text('Watering Control', style: Theme.of(context).textTheme.headline6),
+                    SwitchListTile(
+                      title: Text('Water Valve'),
+                      value: _valveOn,
+                      onChanged: _toggleValve,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    Text('Next Recommended Watering', style: Theme.of(context).textTheme.headline6),
+                    Text(_wateringTime, style: Theme.of(context).textTheme.headline5),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+             Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    Text('Weather Forecast', style: Theme.of(context).textTheme.headline6),
+                    SizedBox(height: 16),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _forecast.length,
+                        itemBuilder: (context, index) {
+                            final day = _forecast[index];
+                            return ListTile(
+                                leading: Icon(Icons.wb_sunny),
+                                title: Text(day['day']),
+                                subtitle: Text(day['condition']),
+                                trailing: Text('${day['temp']['day']}°C'),
+                            );
+                        },
                     ),
                   ],
                 ),
@@ -202,6 +326,35 @@ class _MyHomePageState extends State<MyHomePage> {
                               spots: _humidityData,
                               isCurved: true,
                               colors: [Colors.red],
+                              barWidth: 4,
+                              isStrokeCapRound: true,
+                              belowBarData: BarAreaData(show: false),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    Text('Soil Moisture History', style: Theme.of(context).textTheme.headline6),
+                    SizedBox(height: 16),
+                    Container(
+                      height: 200,
+                      child: LineChart(
+                        LineChartData(
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: _soilMoistureData,
+                              isCurved: true,
+                              colors: [Colors.brown],
                               barWidth: 4,
                               isStrokeCapRound: true,
                               belowBarData: BarAreaData(show: false),
