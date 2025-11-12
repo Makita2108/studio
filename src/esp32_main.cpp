@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Firebase_ESP_Client.h>
@@ -13,7 +12,6 @@
 // Replace with your Firebase Realtime Database URL
 #define DATABASE_URL "YOUR_FIREBASE_DATABASE_URL"
 
-
 // Define Firebase objects
 FirebaseData stream;
 FirebaseData fbdo;
@@ -21,33 +19,18 @@ FirebaseAuth auth;
 FirebaseConfig config;
 
 // Variables to store sensor data
-float temperature = 0.0;
-float humidity = 0.0;
-float soilMoisture = 0.0;
+float soilMoisture1 = 0.0;
+float soilMoisture2 = 0.0;
 
 // Variable to store actuator states
-bool fanOn = false;
 bool valveOn = false;
 
 // Flag to indicate if we are connected to Firebase
 bool firebaseConnected = false;
 
-// Queue for offline data
-struct SensorData {
-  float temperature;
-  float humidity;
-  float soilMoisture;
-};
-
-#define OFFLINE_QUEUE_SIZE 10
-SensorData offline_queue[OFFLINE_QUEUE_SIZE];
-int offline_queue_head = 0;
-int offline_queue_tail = 0;
-
 void streamCallback(FirebaseStream data);
 void streamTimeoutCallback(bool timeout);
 void sendDataToFirebase();
-void sendOfflineData();
 
 void setup() {
   Serial.begin(115200);
@@ -70,7 +53,7 @@ void setup() {
   // Assign the RTDB URL (required)
   config.database_url = DATABASE_URL;
 
-  // Sign up anonymously (or use other authentication methods)
+  // Sign up anonymously
   config.signer.test_mode = true;
 
   // Assign the stream callback function
@@ -82,96 +65,57 @@ void setup() {
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
   
-  // Start stream on a different path
+  // Listen for commands
   if (!Firebase.RTDB.beginStream(&stream, "/commands")) {
-    Serial.println("------------------------------------");
-    Serial.println("Can't begin stream path...");
+    Serial.println("Can't begin stream path: /commands");
     Serial.println("REASON: " + stream.errorReason());
-    Serial.println("------------------------------------");
-    Serial.println();
   }
 }
 
 void loop() {
   // Simulate sensor readings
-  temperature = random(20, 30);
-  humidity = random(40, 60);
-  soilMoisture = random(30, 70);
+  soilMoisture1 = random(30, 70);
+  soilMoisture2 = random(40, 80);
 
   if (WiFi.status() == WL_CONNECTED && firebaseConnected) {
-    if (offline_queue_head != offline_queue_tail) {
-      sendOfflineData();
-    }
     sendDataToFirebase();
-  } else {
-    // Store data offline if not connected
-    offline_queue[offline_queue_head] = {temperature, humidity, soilMoisture};
-    offline_queue_head = (offline_queue_head + 1) % OFFLINE_QUEUE_SIZE;
-    if (offline_queue_head == offline_queue_tail) {
-        offline_queue_tail = (offline_queue_tail + 1) % OFFLINE_QUEUE_SIZE;
-    }
   }
 
   delay(5000); // Wait 5 seconds
 }
 
 void sendDataToFirebase() {
-  if (Firebase.RTDB.setFloat(&fbdo, "/data/temperature", temperature)) {
-    Serial.println("Temperature sent successfully");
+  // Sensor 1
+  FirebaseJson sensor1;
+  sensor1.set("name", "Sensor 1");
+  sensor1.set("moistureLevel", soilMoisture1);
+  if (Firebase.RTDB.setJSON(&fbdo, "/sensors/1", &sensor1)) {
+    Serial.println("Sensor 1 data sent successfully");
   } else {
-    Serial.println("Error sending temperature");
+    Serial.println("Error sending Sensor 1 data: " + fbdo.errorReason());
   }
 
-  if (Firebase.RTDB.setFloat(&fbdo, "/data/humidity", humidity)) {
-    Serial.println("Humidity sent successfully");
+  // Sensor 2
+  FirebaseJson sensor2;
+  sensor2.set("name", "Sensor 2");
+  sensor2.set("moistureLevel", soilMoisture2);
+  if (Firebase.RTDB.setJSON(&fbdo, "/sensors/2", &sensor2)) {
+    Serial.println("Sensor 2 data sent successfully");
   } else {
-    Serial.println("Error sending humidity");
-  }
-  if (Firebase.RTDB.setFloat(&fbdo, "/data/soilMoisture", soilMoisture)) {
-    Serial.println("Soil Moisture sent successfully");
-  } else {
-    Serial.println("Error sending soil moisture");
-  }
-}
-
-void sendOfflineData() {
-  while (offline_queue_head != offline_queue_tail) {
-    SensorData data = offline_queue[offline_queue_tail];
-    offline_queue_tail = (offline_queue_tail + 1) % OFFLINE_QUEUE_SIZE;
-
-    if (Firebase.RTDB.setFloat(&fbdo, "/data/temperature", data.temperature) && 
-        Firebase.RTDB.setFloat(&fbdo, "/data/humidity", data.humidity) && 
-        Firebase.RTDB.setFloat(&fbdo, "/data/soilMoisture", data.soilMoisture)) {
-      Serial.println("Offline data sent successfully");
-    } else {
-      // If sending fails, put it back in the queue
-      offline_queue_tail = (offline_queue_tail -1 + OFFLINE_QUEUE_SIZE) % OFFLINE_QUEUE_SIZE;
-      break;
-    }
+    Serial.println("Error sending Sensor 2 data: " + fbdo.errorReason());
   }
 }
 
 void streamCallback(FirebaseStream data) {
   Serial.printf("stream path, %s/%s\n", data.streamPath().c_str(), data.dataPath().c_str());
-  if (data.dataType() == "boolean") {
-    if (String(data.dataPath().c_str()).equals("/fan")) {
-        fanOn = data.boolData();
-        if(fanOn){
-            Serial.println("Fan turned ON");
-            // Add code here to turn on the fan
-        } else {
-            Serial.println("Fan turned OFF");
-            // Add code here to turn off the fan
-        }
-    } else if (String(data.dataPath().c_str()).equals("/valve")) {
-        valveOn = data.boolData();
-        if(valveOn){
-            Serial.println("Valve turned ON");
-            // Add code here to turn on the valve
-        } else {
-            Serial.println("Valve turned OFF");
-            // Add code here to turn off the valve
-        }
+  if (data.dataType() == "boolean" && String(data.dataPath().c_str()).equals("/valve")) {
+    valveOn = data.boolData();
+    if(valveOn){
+        Serial.println("Valve turned ON");
+        // Add code here to turn on the valve
+    } else {
+        Serial.println("Valve turned OFF");
+        // Add code here to turn off the valve
     }
   }
 }

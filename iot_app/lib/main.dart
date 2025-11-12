@@ -26,6 +26,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -39,6 +41,8 @@ class MyApp extends StatelessWidget {
 }
 
 class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // TODO: Implement your login screen UI and authentication logic here
@@ -62,6 +66,8 @@ class LoginScreen extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -73,9 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
   double _soilMoisture = 0;
   bool _fanOn = false;
   bool _valveOn = false;
-  List<FlSpot> _temperatureData = [];
-  List<FlSpot> _humidityData = [];
-  List<FlSpot> _soilMoistureData = [];
+  final List<FlSpot> _temperatureData = [];
+  final List<FlSpot> _humidityData = [];
+  final List<FlSpot> _soilMoistureData = [];
   String _wateringTime = "Not available";
   List<dynamic> _forecast = [];
 
@@ -181,8 +187,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Temperature', style: Theme.of(context).textTheme.headline6),
-                    Text('$_temperature °C', style: Theme.of(context).textTheme.headline4),
+                    Text('Temperature', style: Theme.of(context).textTheme.titleLarge),
+                    Text('$_temperature °C', style: Theme.of(context).textTheme.headlineMedium),
                   ],
                 ),
               ),
@@ -193,8 +199,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Humidity', style: Theme.of(context).textTheme.headline6),
-                    Text('$_humidity %', style: Theme.of(context).textTheme.headline4),
+                    Text('Humidity', style: Theme.of(context).textTheme.titleLarge),
+                    Text('$_humidity %', style: Theme.of(context).textTheme.headlineMedium),
                   ],
                 ),
               ),
@@ -205,8 +211,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Soil Moisture', style: Theme.of(context).textTheme.headline6),
-                    Text('$_soilMoisture %', style: Theme.of(context).textTheme.headline4),
+                    Text('Soil Moisture', style: Theme.of(context).textTheme.titleLarge),
+                    Text('$_soilMoisture %', style: Theme.of(context).textTheme.headlineMedium),
                   ],
                 ),
               ),
@@ -217,7 +223,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Fan Control', style: Theme.of(context).textTheme.headline6),
+                    Text('Fan Control', style: Theme.of(context).textTheme.titleLarge),
                     SwitchListTile(
                       title: Text('Fan'),
                       value: _fanOn,
@@ -233,7 +239,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Watering Control', style: Theme.of(context).textTheme.headline6),
+                    Text('Watering Control', style: Theme.of(context).textTheme.titleLarge),
                     SwitchListTile(
                       title: Text('Water Valve'),
                       value: _valveOn,
@@ -249,8 +255,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Next Recommended Watering', style: Theme.of(context).textTheme.headline6),
-                    Text(_wateringTime, style: Theme.of(context).textTheme.headline5),
+                    Text('Next Recommended Watering', style: Theme.of(context).textTheme.titleLarge),
+                    Text(_wateringTime, style: Theme.of(context).textTheme.headlineSmall),
                   ],
                 ),
               ),
@@ -261,7 +267,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Weather Forecast', style: Theme.of(context).textTheme.headline6),
+                    Text('Weather Forecast', style: Theme.of(context).textTheme.titleLarge),
                     SizedBox(height: 16),
                     ListView.builder(
                         shrinkWrap: true,
@@ -286,9 +292,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Temperature History', style: Theme.of(context).textTheme.headline6),
+                    Text('Temperature History', style: Theme.of(context).textTheme.titleLarge),
                     SizedBox(height: 16),
-                    Container(
+                    SizedBox(
                       height: 200,
                       child: LineChart(
                         LineChartData(
@@ -315,9 +321,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Humidity History', style: Theme.of(context).textTheme.headline6),
+                    Text('Humidity History', style: Theme.of(context).textTheme.titleLarge),
                     SizedBox(height: 16),
-                    Container(
+                    SizedBox(
                       height: 200,
                       child: LineChart(
                         LineChartData(
@@ -344,9 +350,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Soil Moisture History', style: Theme.of(context).textTheme.headline6),
+                    Text('Soil Moisture History', style: Theme.of(context).textTheme.titleLarge),
                     SizedBox(height: 16),
-                    Container(
+                    SizedBox(
                       height: 200,
                       child: LineChart(
                         LineChartData(
