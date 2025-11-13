@@ -1,86 +1,204 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { AIScheduler } from "@/components/ai-scheduler";
-import { ManualIrrigation } from "@/components/manual-irrigation";
-import { MoistureStatus } from "@/components/moisture-status";
-import { useToast } from "@/hooks/use-toast";
-import { WateringHistory } from "@/components/watering-history";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { PlantCard } from './plant-card';
+import { Button } from './ui/button';
+import { Plus, Droplets } from 'lucide-react';
+
+// Expone la función de riego global en la ventana para simulación
+declare global {
+  interface Window {
+    triggerGlobalWatering: () => void;
+  }
+}
+
+export type Plant = {
+  id: number;
+  name: string;
+  moistureLevel: number;
+  history: Date[];
+  aiEnabled: boolean;
+  lastWatering: Date | null;
+};
+
+const initialPlants: Plant[] = [
+  { id: 1, name: 'Tomate Cherry #1', moistureLevel: 55, history: [], aiEnabled: true, lastWatering: null },
+  { id: 2, name: 'Lechuga Romana #2', moistureLevel: 62, history: [], aiEnabled: true, lastWatering: null },
+  { id: 3, name: 'Pimiento Verde #3', moistureLevel: 48, history: [], aiEnabled: true, lastWatering: null },
+];
+
+const MOISTURE_THRESHOLD = 40;
+const WATERING_COOLDOWN = 1000 * 60 * 5; // 5 minutos
 
 export function DashboardClient() {
-  const [moistureLevel, setMoistureLevel] = useState(50);
-  const [isWatering, setIsWatering] = useState(false);
-  const [history, setHistory] = useState<Date[]>([]);
+  const [plants, setPlants] = useState<Plant[]>(initialPlants);
+  const [isWatering, setIsWatering] = useState<number[]>([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Simulate real-time moisture data changes
-    const interval = setInterval(() => {
-      setMoistureLevel((prev) => {
-        const change = Math.random() * 4 - 2; // Fluctuate by +/- 2
-        const newValue = prev + change;
-        if (newValue < 0) return 0;
-        if (newValue > 100) return 100;
-        return newValue;
-      });
-    }, 5000);
+  const handleGlobalWatering = useCallback(() => {
+    if (isWatering.length > 0) return;
 
-    return () => clearInterval(interval);
-  }, []);
+    const allPlantIds = plants.map(p => p.id);
+    setIsWatering(allPlantIds);
 
-  const handleManualWatering = () => {
-    if (isWatering) return;
-    setIsWatering(true);
-    const wateringTime = new Date();
-    setHistory([wateringTime, ...history]);
+    setPlants(prev =>
+      prev.map(p => ({
+        ...p,
+        history: [...p.history, new Date()],
+      })),
+    );
+
     toast({
-        title: "Sistema de Riego",
-        description: "Riego manual activado durante 5 segundos.",
+      title: 'Simulador Externo',
+      description: '¡Riego general activado para todas las plantas!',
     });
 
-    // Simulate watering effect
     const wateringEffect = setInterval(() => {
-        setMoistureLevel(prev => Math.min(prev + 2, 100));
-    }, 500);
-
+      setPlants(prev =>
+        prev.map(p => ({
+          ...p,
+          moistureLevel: Math.min(p.moistureLevel + 2, 100),
+        })),
+      );
+    }, 100);
 
     setTimeout(() => {
-      setIsWatering(false);
+      setIsWatering([]);
       clearInterval(wateringEffect);
       toast({
-        title: "Sistema de Riego",
-        description: "Riego manual finalizado.",
+        title: 'Simulador Externo',
+        description: 'Riego general finalizado.',
+      });
+    }, 5000);
+  }, [isWatering, plants, toast]);
+
+  // Exponer la función de riego global al objeto window para simulación
+  useEffect(() => {
+    window.triggerGlobalWatering = handleGlobalWatering;
+    // Limpia la función cuando el componente se desmonta
+    return () => {
+      // @ts-ignore
+      window.triggerGlobalWatering = undefined;
+    };
+  }, [handleGlobalWatering]);
+
+  // Simulación de cambio de humedad y riego automático
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlants(prevPlants =>
+        prevPlants.map(plant => {
+          const moistureChange = Math.random() * 0.5;
+          let newMoistureLevel = plant.moistureLevel - moistureChange;
+
+          const now = new Date();
+          const canWater = !plant.lastWatering || now.getTime() - plant.lastWatering.getTime() > WATERING_COOLDOWN;
+
+          if (plant.aiEnabled && newMoistureLevel < MOISTURE_THRESHOLD && canWater) {
+            newMoistureLevel = 100;
+            const newHistory = [...plant.history, new Date()];
+
+            setTimeout(() => {
+              toast({
+                title: 'Riego Automático',
+                description: `La planta '${plant.name}' ha sido regada.`,
+              });
+            }, 0);
+
+            return { ...plant, moistureLevel: newMoistureLevel, history: newHistory, lastWatering: new Date() };
+          }
+
+          return { ...plant, moistureLevel: Math.max(0, newMoistureLevel) };
+        }),
+      );
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [toast]);
+
+  const handleManualWatering = (plantId: number) => {
+    if (isWatering.length > 0) return;
+
+    const plant = plants.find(p => p.id === plantId);
+    if (!plant) return;
+
+    setIsWatering([plantId]);
+    setPlants(prev => prev.map(p => (p.id === plantId ? { ...p, history: [...p.history, new Date()] } : p)));
+    toast({
+      title: 'Sistema de Riego',
+      description: `Riego manual activado para ${plant.name}.`,
+    });
+
+    const wateringEffect = setInterval(() => {
+      setPlants(prev =>
+        prev.map(p =>
+          p.id === plantId ? { ...p, moistureLevel: Math.min(p.moistureLevel + 2, 100) } : p,
+        ),
+      );
+    }, 100);
+
+    setTimeout(() => {
+      setIsWatering([]);
+      clearInterval(wateringEffect);
+      toast({
+        title: 'Sistema de Riego',
+        description: `Riego manual finalizado para ${plant.name}.`,
       });
     }, 5000);
   };
 
-  const handleDryOut = () => {
-    setMoistureLevel(prev => Math.max(0, prev - 10));
+  const handleToggleAI = (plantId: number, isEnabled: boolean) => {
+    setPlants(prev => prev.map(p => (p.id === plantId ? { ...p, aiEnabled: isEnabled } : p)));
+    const plant = plants.find(p => p.id === plantId);
     toast({
-        title: "Simulación",
-        description: "Humedad reducida en 10%.",
-        variant: "destructive"
+      title: 'Riego Automático',
+      description: `El riego automático ha sido ${isEnabled ? 'activado' : 'desactivado'} para la planta '${plant?.name}'.`,
     });
+  };
+
+  const handleAddPlant = () => {
+    if (plants.length >= 30) {
+      toast({
+        title: 'Límite Alcanzado',
+        description: 'No puedes agregar más de 30 plantas.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const newId = plants.length > 0 ? Math.max(...plants.map(p => p.id)) + 1 : 1;
+    const newPlant: Plant = {
+      id: newId,
+      name: `Planta #${newId}`,
+      moistureLevel: 50,
+      history: [],
+      aiEnabled: true,
+      lastWatering: null,
+    };
+    setPlants([...plants, newPlant]);
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6">
-        <MoistureStatus moistureLevel={moistureLevel} />
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-end gap-2">
+        <Button onClick={handleGlobalWatering} variant="secondary">
+          <Droplets className="mr-2 h-4 w-4" />
+          Activar Riego General
+        </Button>
+        <Button onClick={handleAddPlant}>
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar Planta
+        </Button>
       </div>
-      <div className="md:col-span-2 lg:col-span-2 xl:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-            <AIScheduler currentMoisture={moistureLevel} />
-        </div>
-        <div className="lg:col-span-1 flex flex-col gap-6">
-            <ManualIrrigation
-              isWatering={isWatering}
-              onWater={handleManualWatering}
-            />
-            <Button onClick={handleDryOut} variant="outline">Quitar Humedad</Button>
-            <WateringHistory history={history} />
-        </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {plants.map(plant => (
+          <PlantCard
+            key={plant.id}
+            plant={plant}
+            isWatering={isWatering.includes(plant.id)}
+            onWater={() => handleManualWatering(plant.id)}
+            onToggleAI={isEnabled => handleToggleAI(plant.id, isEnabled)}
+          />
+        ))}
       </div>
     </div>
   );
